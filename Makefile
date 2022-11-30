@@ -1,10 +1,10 @@
 CC := gcc
 
-PLAYER_FILES:= player/*.c
-SERVER_FILES := server/*.h
+PLAYER_FILES:= player/*.c player/*.h
+SERVER_FILES := server/*.h server/*.c
 OBJS := player.o server.o
 
-FLAGS := -Wall -g -pthread
+FLAGS := -g -pthread
 OFLAGS :=
 
 
