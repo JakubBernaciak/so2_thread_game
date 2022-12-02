@@ -10,31 +10,26 @@ void* run_lobby(void* arg){
     sem_init(&connection->sem,1,1);
     connection->id = -1;
 
-
     while(server->online){
         sem_wait(&connection->sem);
-        if(connection->used == 1){
-            if(server->size_of_players < server->capacity_of_players){
-                for(int i = 0 ; i < server->capacity_of_players ; i++){
-                    if(server->is_used[i] == 0){
-                        connection->id = i;
-                        connection->used = 0;
-                        server->is_used[i] = 1;
-                        server->size_of_players++;
-                        break;
-                    }
-                }
-            }
-            else{
-                connection->id = -1;
-                connection->used = 0;
+        
+        if(connection->used == 1 && connection->id != -1){
+            server->is_used[connection->id] = 1;
+            server->size_of_players++;
+        }
+
+        connection->id = -1;
+        connection->used = 0;
+                
+        for(int i = 0 ; i < server->capacity_of_players ; i++){
+            if(server->is_used[i] == 0){
+                connection->id = i;
+                break;
             }
         }
-        
+                    
         sem_post(&connection->sem);
     }
-
-    
 
     sem_destroy(&connection->sem);
     shmdt((void *) connection);
