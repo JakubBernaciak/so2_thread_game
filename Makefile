@@ -4,7 +4,7 @@ PLAYER_FILES:= player/*.c player/*.h
 SERVER_FILES := server/*.h server/*.c
 OBJS := player.o server.o
 
-FLAGS := -g -pthread
+FLAGS := -g -lpthread -lrt
 OFLAGS :=
 
 
