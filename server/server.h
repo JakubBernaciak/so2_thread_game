@@ -21,7 +21,7 @@ struct server_t{
     int size_of_players;
     int capacity_of_players;
     int is_used[4];
-    struct player_t *players;
+    struct player_t *players[4];
     
     int round_number;
     
@@ -55,7 +55,7 @@ struct player_t{
 
 int init_server(struct server_t *server);
 
-void* start_lobby(void* arg);
+void* run_lobby(void* arg);
 
 void close_server(struct server_t* server);
 

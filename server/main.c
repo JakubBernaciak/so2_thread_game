@@ -9,9 +9,8 @@ int main(){
     pthread_create(&lobby_thread, NULL,start_lobby,(&server));
     
     getchar();
-    server.online =0;
+    server.online = 0;
     pthread_join(lobby_thread,NULL);
-    close_server(&server);
-    // start_lobby();
+
     return 0;
 }

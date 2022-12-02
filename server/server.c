@@ -1,6 +1,6 @@
 #include "server.h"
 
-void* start_lobby(void* arg){
+void* run_lobby(void* arg){
     struct server_t *server = (struct server_t*)arg;
     key_t key = ftok("server",69);
     int shm_ID = shmget(key, sizeof(struct connection_t), IPC_CREAT | 0666);
@@ -43,13 +43,6 @@ void* start_lobby(void* arg){
     return NULL;
 }
 
-void close_server(struct server_t* server){
-    if(server->players != NULL){
-        free(server->players);
-        server->players = NULL;
-    }
-}
-
 int init_server(struct server_t *server){
     server->server_pid = getpid();
     server->online = 1;
@@ -57,12 +50,7 @@ int init_server(struct server_t *server){
     server->capacity_of_players = 4;
     server->size_of_players = 0;
     
-    server->players = malloc(sizeof(struct player_t)*server->capacity_of_players);
-    if(server->players == NULL){
-        return 2;
-    }
     for(int i = 0; i < server->capacity_of_players; i++){
-        server->players[i].player_id = i;
         server->is_used[i] = 0;
     }
 
