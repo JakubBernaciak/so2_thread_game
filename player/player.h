@@ -15,9 +15,10 @@
 #include <sys/types.h>
 
 struct player_t{
+    sem_t sem;
     int server_pid;
-    int player_pid;
-    int player_id;
+    int pid;
+    int id;
 
     int campsite_x;
     int campsite_y;
@@ -36,6 +37,7 @@ struct connection_t{
     sem_t sem;
     int used;
     int id;
+    int player_pid;
 };
 
 int get_id_from_server();

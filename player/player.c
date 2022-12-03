@@ -8,12 +8,19 @@ int get_id_from_server(){
     }
 
     struct connection_t *connection = (struct connection_t *)shmat(shm_ID, NULL, 0);
-    sem_wait(&connection->sem);
+    int id;
+    int flag = 1;
+    while(flag){
+        sem_wait(&connection->sem);
+        if(connection->used == 0){
+            id = connection->id;
+            connection->used = 1;
+            connection->player_pid = getpid();
+            flag = 0;
+        }
+        sem_post(&connection->sem);
+    }
 
-    int id = connection->id;
-    connection->used = 1;
-
-    sem_post(&connection->sem);
     shmdt((void *) connection);
 
     return id;

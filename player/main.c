@@ -10,9 +10,10 @@ int main(){
         puts("Server is offline");
         return 0;
     }
-    else{
-        printf("Witaj graczu: %d\n",id);
-    }
+
+    printf("Witaj graczu: %d\npid:%d\n",id,getpid());
+
+
 
     return 0;
 }

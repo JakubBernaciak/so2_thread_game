@@ -15,7 +15,8 @@
 #include <sys/types.h>
 
 struct server_t{
-    int server_pid;
+    sem_t sem;
+    int pid;
     int online;
     
     int size_of_players;
@@ -33,12 +34,14 @@ struct connection_t{
     sem_t sem;
     int used;
     int id;
+    int player_pid;
 };
 
 struct player_t{
+    sem_t sem;
     int server_pid;
-    int player_pid;
-    int player_id;
+    int pid;
+    int id;
 
     int campsite_x;
     int campsite_y;
@@ -53,10 +56,12 @@ struct player_t{
     int round;
 };
 
-int init_server(struct server_t *server);
+struct server_t * init_server();
 
 void* run_lobby(void* arg);
 
-void close_server(struct server_t* server);
+void* add_player(void* arg);
+
+void init_player(struct player_t *player, struct connection_t connection);
 
 #endif //SERVER_H
