@@ -57,11 +57,9 @@ struct player_t{
 };
 
 struct server_t * init_server();
-
 void* run_lobby(void* arg);
-
 void* add_player(void* arg);
-
-void init_player(struct player_t *player, struct connection_t connection);
+struct player_t* create_player(struct connection_t connection);
+void destroy_players();
 
 #endif //SERVER_H

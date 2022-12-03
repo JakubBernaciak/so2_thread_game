@@ -2,8 +2,24 @@
 
 struct server_t server;
 
+void destroy_players(){
+    for(int i = 0; i < server.capacity_of_players; i++){
+        if(server.is_used[i]){
+            server.is_used[i] = 0;
+            server.size_of_players --;
+            free(server.players[i]);
+            server.players[i] = NULL;
+        }
 
-void init_player(struct player_t *player, struct connection_t connection){
+    }
+}
+
+struct player_t* create_player(struct connection_t connection){
+    
+    struct player_t *player = malloc(sizeof(struct player_t));
+    if(player == NULL)
+        return NULL;
+    
     sem_init(&player->sem,1,1);
     player->server_pid = getpid();
     player->pid = connection.player_pid;
@@ -19,17 +35,21 @@ void init_player(struct player_t *player, struct connection_t connection){
     player->c_carried = 0;
 
     player->deaths = 0;
+    return player;
 }
 
 void* add_player(void* arg){
     struct connection_t *connection = (struct connection_t *) arg;
-    struct player_t player;
-    init_player(&player,*connection);
-    server.players[player.id] = &player;
-    
-    printf("New player arrived ID:%d PID:%d\n",player.id, player.pid);
+    int id = connection->id;
 
-    sem_destroy(&player.sem);
+    sem_wait(&server.sem);
+    struct player_t *player = create_player(*connection);
+    server.players[id] = player;
+    sem_post(&server.sem);
+    
+    printf("New player arrived ID:%d PID:%d\n",id, player->pid);
+
+    sem_destroy(&player->sem);
 
     return NULL;
 }

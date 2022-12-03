@@ -23,9 +23,14 @@ int main(){
     }
 
     getchar();
+    printf("%d\n",server->players[0]->pid);
+    printf("%d\n",server->players[1]->pid);
+    printf("%d\n",server->players[2]->pid);
+    printf("%d\n",server->players[3]->pid);
 
     server->online = 0;
     pthread_join(lobby_thread,NULL);
+    destroy_players();
 
     return 0;
 }
