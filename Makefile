@@ -4,7 +4,7 @@ PLAYER_FILES:= player/*.c player/*.h
 SERVER_FILES := server/*.h server/*.c
 OBJS := player.o server.o
 
-FLAGS := -g -lpthread -lrt
+FLAGS := -g -lpthread -lrt -lncurses
 OFLAGS :=
 
 
@@ -18,3 +18,7 @@ server.o: $(SERVER_FILES)
 
 clean:
 	rm *.o
+p:
+	./player.o
+s:
+	./server.o

@@ -22,9 +22,30 @@ int main(){
         sem_post(&server->sem);
     }
 
-    getchar();
 
+    int err_code = load_map();
+    if(err_code == 2){
+        puts("Couldn't allocate memory for map");
+        server->online = 0;
+        return 2;
+    }
+    else if(err_code == 1){
+        puts("Couldn't open file with map");
+        server->online = 0;
+        return 1;
+    }
+    initscr();
+    pthread_t display_thread;
+    pthread_create(&display_thread,NULL,display,NULL);
+
+
+    while(1){
+        int c = getch();
+        if(c == 'q')
+            break;
+    }
     server->online = 0;
+    endwin();
     pthread_join(lobby_thread,NULL);
 
     return 0;

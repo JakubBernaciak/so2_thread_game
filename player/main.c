@@ -13,8 +13,9 @@ int main(){
 
     printf("Witaj graczu: %d\npid:%d\n",id,getpid());
     struct player_t *player = connect_to_server(id);
-
+    sleep(1);
     while(1){
+        printf("%d\n",player->server_pid);
         int c = getchar();
         if(c == 'q')
             break;

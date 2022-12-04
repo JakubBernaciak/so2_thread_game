@@ -13,16 +13,19 @@
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/types.h>
+#include <ncurses.h>
 
 struct server_t{
     sem_t sem;
     int pid;
     int online;
+    char* map;
     
     int size_of_players;
     int capacity_of_players;
     int is_used[4];
     struct player_t *players[4];
+    pthread_t players_threads[4];
     
     int round_number;
     
@@ -59,6 +62,8 @@ struct player_t{
 struct server_t * init_server();
 void* run_lobby(void* arg);
 void* add_player(void* arg);
-void init_player(struct player_t *player,struct connection_t connection);
+void init_player(struct player_t *player,int id, int player_pid);
+void* display();
+int load_map();
 
 #endif //SERVER_H
