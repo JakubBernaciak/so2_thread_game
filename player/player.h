@@ -41,5 +41,6 @@ struct connection_t{
 };
 
 int get_id_from_server();
+struct player_t* connect_to_server(int id);
 
 #endif //PLAYER_H
