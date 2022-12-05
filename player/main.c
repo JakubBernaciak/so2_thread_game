@@ -11,21 +11,32 @@ int main(){
         return 0;
     }
 
-    printf("Witaj graczu: %d\npid:%d\n",id,getpid());
     struct player_t *player = connect_to_server(id);
-    sleep(1);
+    pthread_t thread;
+    initscr();
+    pthread_create(&thread,NULL,display,player);
     while(1){
-        printf("%d\n",player->server_pid);
-        int c = getchar();
+        int c = getch();
         if(c == 'q')
             break;
-        if(c == 's'){
-            sem_wait(&player->sem);
-            player->x++;
-            sem_post(&player->sem);
+        switch(c){
+            case 'w':
+                player->move_y = -1;
+                break;
+            case 'a':
+                player->move_x = -1;
+                break;
+            case 's':
+                player->move_y = 1;
+                break;
+            case 'd':
+                player->move_x = 1;
+                break;
         }
 
     }
+    endwin();
+    
 
 
     return 0;

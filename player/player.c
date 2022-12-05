@@ -1,4 +1,45 @@
 #include "player.h"
+void *display(void *arg){
+    struct player_t *player = (struct player_t*) arg;
+
+    while(1){
+        if(player->ready)
+            break;
+    }
+
+    while(1){
+        sem_wait(&player->sem);
+        clear();
+        for(int i = 0; i<25 ; i++){
+            printw("%c",player->map[i]);
+            if(i%5 ==4)
+                printw("\n");
+        }
+        int row = 0;
+        int col = 35;
+
+        
+        mvprintw(row++,col++,"Server's PID: %d",player->server_pid);
+        mvprintw(row++,col,"Campsite X/Y: %d/%d",player->campsite_x,player->campsite_y);
+        mvprintw(row++,col--,"Round number: %d",player->round);
+        row++;
+
+        mvprintw(row++, col++, "Player:");
+        mvprintw(row++, col, "Number: %d",player->id +1);
+        mvprintw(row++, col, "Curr X/Y: %d/%d",player->x,player->y);
+        mvprintw(row++, col--, "Deaths: %d",player->deaths);
+        row++;
+        mvprintw(row++,col++,"Coins");
+        mvprintw(row++,col,"Carried: %d",player->c_carried);
+        mvprintw(row++,col,"Brought: %d",player->c_brought);
+        
+        
+        
+        sem_post(&player->sem);
+        refresh();
+        sleep(1);
+    }
+}
 
 int get_id_from_server(){
     int shm_ID = shm_open("lobby", O_RDWR, 0666);

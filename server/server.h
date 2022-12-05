@@ -14,6 +14,7 @@
 #include <sys/ipc.h>
 #include <sys/types.h>
 #include <ncurses.h>
+#include <time.h>
 
 struct server_t{
     sem_t sem;
@@ -31,6 +32,10 @@ struct server_t{
     
     int campsite_x;
     int campsite_y;
+
+    struct beast_t* beasts[10];
+    int number_of_beast;
+    int capacity_of_beast;
 };
 
 struct connection_t{
@@ -40,8 +45,18 @@ struct connection_t{
     int player_pid;
 };
 
+struct beast_t{
+    pthread_mutex_t sem;
+    int x;
+    int y;
+    int can_move;
+    char under;
+};
+
 struct player_t{
     sem_t sem;
+    int ready;
+    int can_move;
     int server_pid;
     int pid;
     int id;
@@ -51,12 +66,16 @@ struct player_t{
 
     int x;
     int y;
+    int move_x;
+    int move_y;
 
     int c_carried;
     int c_brought;
 
     int deaths;
     int round;
+    char under;
+    char map[25];
 };
 
 struct server_t * init_server();
@@ -65,5 +84,11 @@ void* add_player(void* arg);
 void init_player(struct player_t *player,int id, int player_pid);
 void* display();
 int load_map();
-
+void get_map(struct player_t*);
+void move_player(struct player_t*);
+void spawn_reward(char c);
+void interaction(struct player_t*);
+void move_beast(struct beast_t *beast,int x,int y);
+void *spawn_beast(void *arg);
+void reset_moves_on_beasts();
 #endif //SERVER_H

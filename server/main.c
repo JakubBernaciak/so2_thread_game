@@ -38,14 +38,20 @@ int main(){
     pthread_t display_thread;
     pthread_create(&display_thread,NULL,display,NULL);
 
-
     while(1){
         int c = getch();
         if(c == 'q')
             break;
+        if(c == 'c' || c == 't' || c == 'T')
+            spawn_reward(c);
+        if(c == 'b'){
+            pthread_t thread;
+            pthread_create(&thread,NULL,spawn_beast,NULL);
+        }
     }
     server->online = 0;
     endwin();
+    
     pthread_join(lobby_thread,NULL);
 
     return 0;
