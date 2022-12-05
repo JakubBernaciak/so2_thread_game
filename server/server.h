@@ -91,4 +91,6 @@ void interaction(struct player_t*);
 void move_beast(struct beast_t *beast,int x,int y);
 void *spawn_beast(void *arg);
 void reset_moves_on_beasts();
+void beast_kill(struct beast_t *beast);
+void player_death(struct player_t * player);
 #endif //SERVER_H

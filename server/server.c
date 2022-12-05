@@ -13,23 +13,48 @@ void reset_moves_on_beasts(){
     }
 }
 
+void player_death(struct player_t * player){
+    sem_wait(&player->sem);
+    player->c_carried = 0;
+    player->deaths++;
+    do{
+        player->x = rand()%22 + 2;
+        player->y = rand()%48 + 2;
+        player->under = server.map[player->x + player->y *54];
+    }while(player->under != ' ');
+    sem_post(&player->sem);
+}
+void beast_kill(struct beast_t *beast){
+    int player_id = (int)(beast->under - '0' - 1);
+    sem_wait(&server.players[player_id]->sem);
+    beast->under = server.players[player_id]->under;
+    sem_post(&server.players[player_id]->sem);
+    player_death(server.players[player_id]);
+}
+
 void move_beast(struct beast_t *beast,int x,int y){
     if(x){
         sem_wait(&server.sem);
-        if(server.map[beast->x + x + beast->y *54] == ' '){
+        if(server.map[beast->x + x + beast->y *54] != '|'){
             server.map[beast->x + beast->y *54] = beast->under;
             beast->x += x;
             beast->under = server.map[beast->x + beast->y *54];
+            if(beast->under >= '1' && beast->under <= '4'){
+                beast_kill(beast);
+            }
             server.map[beast->x + beast->y *54] = '*';
         }
         sem_post(&server.sem);
     }
     else{
         sem_wait(&server.sem);
-        if(server.map[beast->x + (beast->y + y)*54] == ' '){
+        if(server.map[beast->x + (beast->y + y)*54] != '|'){
             server.map[beast->x + beast->y *54] = beast->under;
             beast->y += y;
             beast->under = server.map[beast->x + beast->y *54];
+            if(beast->under >= '1' && beast->under <= '4'){
+                beast_kill(beast);
+            }
             server.map[beast->x + beast->y *54] = '*';
         }
         sem_post(&server.sem);
@@ -238,34 +263,32 @@ void move_player(struct player_t* player){
 
     if(!player->can_move){
         if(player->move_x != 0){
-        sem_wait(&server.sem);
-        if(server.map[player->x + player->move_x + player->y *54] != '|')
-        {
-            server.map[player->x + player->y *54] = player->under;
-            player->x += player->move_x;
-            player->under = server.map[player->x + player->y *54];
-            server.map[player->x + player->y *54] = '0' +player->id + 1;
-            player->can_move ++;
-            interaction(player);
-            get_map(player);
+            sem_wait(&server.sem);
+            if(server.map[player->x + player->move_x + player->y *54] != '|')
+            {
+                    server.map[player->x + player->y *54] = player->under;
+                    player->x += player->move_x;
+                    player->under = server.map[player->x + player->y *54];
+                    server.map[player->x + player->y *54] = '0' +player->id + 1;
+                    player->can_move ++;
+                    interaction(player);
+            } 
+            sem_post(&server.sem);
+            
         }
-        
-        sem_post(&server.sem);
-        
-    }
-    else if(player->move_y){
-        sem_wait(&server.sem);
-        if(server.map[player->x + (player->y + player->move_y ) *54] != '|'){
-            server.map[player->x + player->y *54] = player->under;
-            player->y += player->move_y;
-            player->under = server.map[player->x + player->y *54];
-            server.map[player->x + player->y *54] = '0' +player->id + 1;
-            player->can_move ++;
-            interaction(player);
-            get_map(player);
+        else if(player->move_y){
+            sem_wait(&server.sem);
+            if(server.map[player->x + (player->y + player->move_y ) *54] != '|'){
+                server.map[player->x + player->y *54] = player->under;
+                player->y += player->move_y;
+                player->under = server.map[player->x + player->y *54];
+                server.map[player->x + player->y *54] = '0' +player->id + 1;
+                player->can_move ++;
+                interaction(player);
+            }
+            sem_post(&server.sem);
         }
-        sem_post(&server.sem);
-    }
+        get_map(player);
     }
     player->move_x = 0;
     player->move_y = 0;
