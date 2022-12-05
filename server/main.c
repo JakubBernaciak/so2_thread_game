@@ -36,7 +36,7 @@ int main(){
     }
     initscr();
     pthread_t display_thread;
-    pthread_create(&display_thread,NULL,display,NULL);
+    pthread_create(&display_thread,NULL,start_game,NULL);
 
     while(1){
         int c = getch();

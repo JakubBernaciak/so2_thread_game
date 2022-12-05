@@ -17,7 +17,9 @@ server.o: $(SERVER_FILES)
 	$(CC) -o server.o $(SERVER_FILES) $(FLAGS) $(OFLAGS)
 
 clean:
-	rm *.o
+	rm -rf /dev/shm/lobby
+	rm -rf /dev/shm/player*
+	rm -rf *.o
 p:
 	./player.o
 s:

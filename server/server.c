@@ -22,6 +22,8 @@ void player_death(struct player_t * player){
         player->y = rand()%48 + 2;
         player->under = server.map[player->x + player->y *54];
     }while(player->under != ' ');
+    server.map[player->x + player->y *54] = '0' + player->id + 1; 
+
     sem_post(&player->sem);
 }
 void beast_kill(struct beast_t *beast){
@@ -118,65 +120,76 @@ void spawn_reward(char c){
     server.map[x + y *54] = c;
     sem_post(&server.sem);
 }
-
-void* display(){
-    
-    while(server.online){
-        
-        clear();
-        sem_wait(&server.sem);
-        reset_moves_on_beasts();
-        printw("%s",server.map);
-        int row = 0;
-        int col = 55;
-
-        
-        mvprintw(row++,col++,"Server's PID: %d",server.pid);
-        mvprintw(row++,col,"Campsite X/Y: %d/%d",server.campsite_x,server.campsite_y);
-        mvprintw(row++,col--,"Round number: %d",server.round_number++);
-
-        mvprintw(row++, col++, "Parameter: Player1 Player2 Player3 Player4");
-        mvprintw(row++, col, "PID:");
-        mvprintw(row++, col, "Curr X/Y:");
-        mvprintw(row++, col--, "Deaths:");
-        row++;
-        mvprintw(row++,col++,"Coins");
-        mvprintw(row++,col,"Carried:");
-        mvprintw(row++,col,"Brought:");
-
-        col+=10;
-        row-=7;
-        mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
-        mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
-        mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
-        row+=2;
-        mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
-        mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
-
-        row-=7;
-        for(int i = 0 ; i < server.capacity_of_players ; i++ ){
-            if(server.is_used[i] == 1){
-                sem_wait(&server.players[i]->sem);
-                mvprintw(row++,col + 8*i,"%d",server.players[i]->pid);
-                mvprintw(row++,col + 8*i,"%d/%d",server.players[i]->x,server.players[i]->y);
-                mvprintw(row++,col + 8*i,"%d",server.players[i]->deaths);
-                row+=2;
-                mvprintw(row++,col + 8*i,"%d",server.players[i]->c_carried);
-                mvprintw(row++,col + 8*i,"%d",server.players[i]->c_brought);
-                row-=7;
-                if(server.players[i]->can_move)
-                    server.players[i]->can_move--;
-                sem_post(&server.players[i]->sem);
-            }
+void update_players(){
+    for(int i = 0 ; i < server.capacity_of_players ; i++ ){
+        if(server.is_used[i] == 1){
+            sem_wait(&server.players[i]->sem);
+            if(server.players[i]->can_move)
+                server.players[i]->can_move--;
+            server.players[i]->round = server.round_number;
+            get_map(server.players[i]);
+            sem_post(&server.players[i]->sem);
         }
-        mvprintw(100,100," ");
-        
+    }
+}
+
+void* start_game(){
+    while(server.online){
+        sem_wait(&server.sem);
+        server.round_number++;
+        display();
+        reset_moves_on_beasts();
+        update_players();
         sem_post(&server.sem);
-        refresh();
-        refresh();
         sleep(1);
     }
     return NULL;
+}
+
+void display(){
+    clear();
+    printw("%s",server.map);
+    int row = 0;
+    int col = 55;
+    
+    mvprintw(row++,col++,"Server's PID: %d",server.pid);
+    mvprintw(row++,col,"Campsite X/Y: %d/%d",server.campsite_x,server.campsite_y);
+    mvprintw(row++,col--,"Round number: %d",server.round_number);
+
+    mvprintw(row++, col++, "Parameter: Player1 Player2 Player3 Player4");
+    mvprintw(row++, col, "PID:");
+    mvprintw(row++, col, "Curr X/Y:");
+    mvprintw(row++, col--, "Deaths:");
+    row++;
+    mvprintw(row++,col++,"Coins");
+    mvprintw(row++,col,"Carried:");
+    mvprintw(row++,col,"Brought:");
+
+    col+=10;
+    row-=7;
+    mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
+    mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
+    mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
+    row+=2;
+    mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
+    mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
+
+    row-=7;
+    for(int i = 0 ; i < server.capacity_of_players ; i++ ){
+        if(server.is_used[i] == 1){
+            sem_wait(&server.players[i]->sem);
+            mvprintw(row++,col + 8*i,"%d",server.players[i]->pid);
+            mvprintw(row++,col + 8*i,"%d/%d",server.players[i]->x,server.players[i]->y);
+            mvprintw(row++,col + 8*i,"%d",server.players[i]->deaths);
+            row+=2;
+            mvprintw(row++,col + 8*i,"%d",server.players[i]->c_carried);
+            mvprintw(row++,col + 8*i,"%d",server.players[i]->c_brought);
+            row-=7;
+            sem_post(&server.players[i]->sem);
+        }
+    }
+    mvprintw(100,100," ");
+    refresh(); 
 }
 
 int load_map(){
@@ -257,10 +270,7 @@ void interaction(struct player_t* player){
     }
 
 }
-void move_player(struct player_t* player){
-
-    player->round = server.round_number;
-
+void move_player(struct player_t* player){ 
     if(!player->can_move){
         if(player->move_x != 0){
             sem_wait(&server.sem);
@@ -288,7 +298,6 @@ void move_player(struct player_t* player){
             }
             sem_post(&server.sem);
         }
-        get_map(player);
     }
     player->move_x = 0;
     player->move_y = 0;

@@ -80,9 +80,11 @@ struct player_t{
 
 struct server_t * init_server();
 void* run_lobby(void* arg);
+void* start_game();
+void update_players();
 void* add_player(void* arg);
 void init_player(struct player_t *player,int id, int player_pid);
-void* display();
+void display();
 int load_map();
 void get_map(struct player_t*);
 void move_player(struct player_t*);
