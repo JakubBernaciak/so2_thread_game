@@ -3,7 +3,7 @@
 struct server_t server;
 
 
-void reset_moves_on_beasts(){
+void update_beasts(){
     for(int i = 0 ; i < server.number_of_beast; i++){
         pthread_mutex_lock(&server.beasts[i]->sem);
         if(server.beasts[i]->can_move){
@@ -14,30 +14,26 @@ void reset_moves_on_beasts(){
 }
 
 void player_death(struct player_t * player){
-    sem_wait(&player->sem);
     player->c_carried = 0;
     player->deaths++;
     do{
-        player->x = rand()%22 + 2;
-        player->y = rand()%48 + 2;
+        player->y = rand()%22 + 2;
+        player->x = rand()%48 + 2;
         player->under = server.map[player->x + player->y *54];
     }while(player->under != ' ');
     server.map[player->x + player->y *54] = '0' + player->id + 1; 
-
-    sem_post(&player->sem);
 }
 void beast_kill(struct beast_t *beast){
     int player_id = (int)(beast->under - '0' - 1);
     sem_wait(&server.players[player_id]->sem);
     beast->under = server.players[player_id]->under;
-    sem_post(&server.players[player_id]->sem);
     player_death(server.players[player_id]);
+    sem_post(&server.players[player_id]->sem);
 }
 
 void move_beast(struct beast_t *beast,int x,int y){
     if(x){
-        sem_wait(&server.sem);
-        if(server.map[beast->x + x + beast->y *54] != '|'){
+        if(server.map[beast->x + x + beast->y *54] != '|' && server.map[beast->x + x + beast->y *54] != '*'){
             server.map[beast->x + beast->y *54] = beast->under;
             beast->x += x;
             beast->under = server.map[beast->x + beast->y *54];
@@ -46,11 +42,9 @@ void move_beast(struct beast_t *beast,int x,int y){
             }
             server.map[beast->x + beast->y *54] = '*';
         }
-        sem_post(&server.sem);
     }
     else{
-        sem_wait(&server.sem);
-        if(server.map[beast->x + (beast->y + y)*54] != '|'){
+        if(server.map[beast->x + (beast->y + y)*54] != '|' && server.map[beast->x + (beast->y + y)*54] != '*'){
             server.map[beast->x + beast->y *54] = beast->under;
             beast->y += y;
             beast->under = server.map[beast->x + beast->y *54];
@@ -59,10 +53,126 @@ void move_beast(struct beast_t *beast,int x,int y){
             }
             server.map[beast->x + beast->y *54] = '*';
         }
-        sem_post(&server.sem);
 
     }
     beast->can_move = 1;
+}
+int check_if_player(char c){
+    if(c >= '1' && c <= '4')
+        return 1;
+    return 0;
+}
+
+int detect_player(struct beast_t *beast){
+    //insta kill
+    if(check_if_player(server.map[beast->x + 1 + beast->y *54]))
+        return 1;
+    if(check_if_player(server.map[beast->x - 1 + beast->y *54]))
+        return 2;
+    if(check_if_player(server.map[beast->x + (beast->y + 1) *54]))
+        return 3;
+    if(check_if_player(server.map[beast->x + (beast->y - 1)  *54]))
+        return 0;
+    
+    for(int i = -2 ;i <= 2 ; i++){
+        for(int j = -2 ; j <= 2; j++){
+            if(check_if_player(server.map[beast->x + i + (beast->y + j) *54])){
+                if(i == 0){
+                    if(j >0){
+                        if(server.map[beast->x + (beast->y + 1) *54] != '|')
+                            return 3;
+                        continue;
+                    }
+                    if(server.map[beast->x + (beast->y - 1) *54] != '|')
+                        return 0;
+                    continue;
+                }
+                else if(j == 0){
+                    if(i >0){
+                        if(server.map[beast->x + 1 + (beast->y) *54] != '|')
+                            return 1;
+                        continue;
+                    }
+                    if(server.map[beast->x - 1 + (beast->y - 1) *54] != '|')
+                        return 2;
+                    continue;
+                }
+                else if(abs(i) == 1 && abs(j) == 1){
+                    if(server.map[beast->x + i + (beast->y) *54] != '|'){
+                        if(i > 0)
+                            return 1;
+                        return 2;
+                    }
+                    if(server.map[beast->x + (beast->y + j) *54] != '|'){
+                        if(j > 0)
+                            return 2;
+                        return 0;
+                    }
+                }
+                else if(abs(i) == 2 && abs(j) == 2){
+                    int move_i = 1;
+                    if(i < 0)
+                        move_i = -1;
+                    int move_j = 1;
+                    if(j < 0)
+                        move_j = -1;
+        
+                    if(server.map[beast->x + move_i + (beast->y + move_j) *54] != '|'){
+                        if(server.map[beast->x + move_i + (beast->y) *54] != '|'){
+                            if(i > 0)
+                                return 1;
+                            return 2;
+                        }
+                        if(server.map[beast->x + (beast->y + move_j) *54] != '|'){
+                            if(j > 0)
+                                return 2;
+                            return 0;
+                        }
+                    }
+                }
+                else if(abs(i) == 2 && abs(j) == 1){
+                    int move_i = 1;
+                    if(i < 0)
+                        move_i = -1;
+                    int move_j = j;
+                    if(server.map[beast->x + move_i + (beast->y + move_j) *54] != '|'){
+                        if(server.map[beast->x + move_i + (beast->y) *54] != '|'){
+                            if(i > 0)
+                                return 1;
+                            return 2;
+                        }
+                        if(server.map[beast->x + (beast->y + move_j) *54] != '|'){
+                            if(j > 0)
+                                return 2;
+                            return 0;
+                        }
+                    }
+                }
+                else if(abs(i) == 1 && abs(j) == 2){
+                    int move_j = 1;
+                    if(j < 0)
+                        move_j = -1;
+                    int move_i = i;
+                    if(server.map[beast->x + move_i + (beast->y + move_j) *54] != '|'){
+                        if(server.map[beast->x + move_i + (beast->y) *54] != '|'){
+                            if(i > 0)
+                                return 1;
+                            return 2;
+                        }
+                        if(server.map[beast->x + (beast->y + move_j) *54] != '|'){
+                            if(j > 0)
+                                return 2;
+                            return 0;
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    
+    return -1;
 }
 
 void *spawn_beast(void *arg){
@@ -72,8 +182,8 @@ void *spawn_beast(void *arg){
     beast.under = ' ';
     sem_wait(&server.sem);
     do{
-        beast.x = rand()%22 + 2;
-        beast.y = rand()%48 + 2;
+        beast.y = rand()%22 + 2;
+        beast.x = rand()%48 + 2;
         
     }while(server.map[beast.x + beast.y *54] != ' ');
     server.map[beast.x + beast.y *54] = '*';
@@ -83,8 +193,12 @@ void *spawn_beast(void *arg){
     while(server.online){
         
         if(!beast.can_move){
-            int los = rand()%4;
+            sem_wait(&server.sem);
             pthread_mutex_lock(&beast.sem);
+            int los = detect_player(&beast);
+            if(los == -1){
+                los = rand()%4;
+            }
             switch(los){
                 case 1:
                     move_beast(&beast,1,0);
@@ -100,6 +214,7 @@ void *spawn_beast(void *arg){
                     break;
             }
             pthread_mutex_unlock(&beast.sem);
+            sem_post(&server.sem);
         }
         
     }
@@ -112,8 +227,8 @@ void spawn_reward(char c){
     int x;
     int y;
     do{
-        x = rand()%22 + 2;
-        y = rand()%48 + 2;
+        y = rand()%22 + 2;
+        x = rand()%48 + 2;
         
     }while(server.map[x + y *54] != ' ');
 
@@ -138,10 +253,10 @@ void* start_game(){
         sem_wait(&server.sem);
         server.round_number++;
         display();
-        reset_moves_on_beasts();
+        update_beasts();
         update_players();
         sem_post(&server.sem);
-        sleep(1);
+        usleep(200000);
     }
     return NULL;
 }
@@ -223,8 +338,8 @@ void init_player(struct player_t *player,int id, int player_pid){
     player->campsite_y = 0;
 
     do{
-        player->x = rand()%22 + 2;
-        player->y = rand()%48 + 2;
+        player->y = rand()%22 + 2;
+        player->x = rand()%48 + 2;
         player->under = server.map[player->x + player->y *54];
     }while(player->under != ' ');
 
@@ -263,6 +378,9 @@ void interaction(struct player_t* player){
             player->c_carried += 50;
             player->under = ' ';
             break;
+        case 'D':
+            player->under = ' ';
+            break;
         case 'A':
             player->c_brought += player->c_carried;
             player->c_carried = 0;
@@ -274,7 +392,22 @@ void move_player(struct player_t* player){
     if(!player->can_move){
         if(player->move_x != 0){
             sem_wait(&server.sem);
-            if(server.map[player->x + player->move_x + player->y *54] != '|')
+            if(server.map[player->x + player->move_x + player->y *54] == '*'){
+                server.map[player->x + player->y *54] = player->under;
+                player_death(player);
+                player->can_move ++;
+            }
+            else if(check_if_player(server.map[player->x + player->move_x + (player->y  ) *54])){
+                int player_id = (int)(server.map[player->x + player->move_x + (player->y) *54] - '0' - 1);
+                sem_wait(&server.players[player_id]->sem);
+                player_death(server.players[player_id]);
+                sem_post(&server.players[player_id]->sem);
+                server.map[player->x + player->move_x + (player->y) *54] = 'D';
+                server.map[player->x + (player->y) *54] = player->under;
+                player_death(player);
+                player->can_move ++;
+            }
+            else if(server.map[player->x + player->move_x + player->y *54] != '|')
             {
                     server.map[player->x + player->y *54] = player->under;
                     player->x += player->move_x;
@@ -288,7 +421,22 @@ void move_player(struct player_t* player){
         }
         else if(player->move_y){
             sem_wait(&server.sem);
-            if(server.map[player->x + (player->y + player->move_y ) *54] != '|'){
+            if(server.map[player->x + (player->y + player->move_y ) *54] == '*'){
+                server.map[player->x + player->y *54] = player->under;
+                player_death(player);
+                player->can_move ++;
+            }
+            else if(check_if_player(server.map[player->x + (player->y + player->move_y ) *54])){
+                int player_id = (int)(server.map[player->x + (player->y + player->move_y ) *54] - '0' - 1);
+                sem_wait(&server.players[player_id]->sem);
+                player_death(server.players[player_id]);
+                sem_post(&server.players[player_id]->sem);
+                server.map[player->x + (player->y + player->move_y) *54] = 'D';
+                server.map[player->x + (player->y) *54] = player->under;
+                player_death(player);
+                player->can_move ++;
+            }
+            else if(server.map[player->x + (player->y + player->move_y ) *54] != '|'){
                 server.map[player->x + player->y *54] = player->under;
                 player->y += player->move_y;
                 player->under = server.map[player->x + player->y *54];

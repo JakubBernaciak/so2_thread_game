@@ -37,7 +37,7 @@ void *display(void *arg){
         
         sem_post(&player->sem);
         refresh();
-        sleep(1);
+        usleep(200000);
     }
 }
 
