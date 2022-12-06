@@ -2,6 +2,10 @@
 
 int main(){
     struct server_t *server = init_server();
+    if(init_drops() == 2){
+        puts("Couldn't allocate memory for drops");
+        return 2;
+    }
     
     pthread_t lobby_thread;
     pthread_create(&lobby_thread, NULL, run_lobby, NULL);
@@ -27,11 +31,13 @@ int main(){
     if(err_code == 2){
         puts("Couldn't allocate memory for map");
         server->online = 0;
+        close_server();
         return 2;
     }
     else if(err_code == 1){
         puts("Couldn't open file with map");
         server->online = 0;
+        close_server();
         return 1;
     }
     initscr();

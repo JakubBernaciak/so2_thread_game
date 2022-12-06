@@ -15,7 +15,7 @@ int main(){
     pthread_t thread;
     initscr();
     pthread_create(&thread,NULL,display,player);
-    while(1){
+    while(player->online){
         int c = getch();
         if(c == 'q')
             break;

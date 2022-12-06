@@ -2,6 +2,44 @@
 
 struct server_t server;
 
+void get_drop(struct player_t * player){
+    for(int i = 0; i < server.drop_capacity; i++){
+        if(server.drop_is_used[i]){
+            if(player->x == server.drops[i].x && player->y == server.drops[i].y){
+                player->under = server.drops[i].under;
+                player->c_carried += server.drops[i].reward;
+                server.drop_is_used[i] = 0;
+                break;
+            }
+        }
+    }
+}
+
+void create_drop(int reward, int x, int y, char under){
+    for(int i = 0; i < server.drop_capacity; i++){
+        if(!server.drop_is_used[i]){
+            server.drops[i].reward = reward;
+            server.drops[i].x = x;
+            server.drops[i].y = y;
+            server.drops[i].under = under;
+            server.drop_is_used[i] = 1;
+            break;
+        }
+    }
+}
+
+int init_drops(){
+    server.drop_capacity = 20;
+    server.drops = (struct drop_t*)calloc(server.drop_capacity,sizeof(struct drop_t));
+    if(server.drops == NULL)
+        return 2;
+    for(int i = 0; i < server.drop_capacity; i++){
+        server.is_used[i] = 0;
+    }
+    
+    return 0;
+}
+
 void update_beasts(){
     for(int i = 0 ; i < server.number_of_beast; i++){
         pthread_mutex_lock(&server.beasts[i]->sem);
@@ -25,7 +63,8 @@ void player_death(struct player_t * player){
 void beast_kill(struct beast_t *beast){
     int player_id = (int)(beast->under - '0' - 1);
     sem_wait(&server.players[player_id]->sem);
-    beast->under = server.players[player_id]->under;
+    beast->under = 'D';
+    create_drop(server.players[player_id]->c_carried,beast->x,beast->y,server.players[player_id]->under);
     player_death(server.players[player_id]);
     sem_post(&server.players[player_id]->sem);
 }
@@ -382,7 +421,7 @@ void interaction(struct player_t* player){
             player->under = ' ';
             break;
         case 'D':
-            player->under = ' ';
+            get_drop(player);
             break;
         case 'A':
             player->c_brought += player->c_carried;
@@ -403,6 +442,7 @@ void move_player(struct player_t* player){
             else if(check_if_player(server.map[player->x + player->move_x + (player->y  ) *54])){
                 int player_id = (int)(server.map[player->x + player->move_x + (player->y) *54] - '0' - 1);
                 sem_wait(&server.players[player_id]->sem);
+                create_drop(server.players[player_id]->c_carried + player->c_carried,server.players[player_id]->x,server.players[player_id]->y,server.players[player_id]->under);
                 player_death(server.players[player_id]);
                 sem_post(&server.players[player_id]->sem);
                 server.map[player->x + player->move_x + (player->y) *54] = 'D';
@@ -432,6 +472,7 @@ void move_player(struct player_t* player){
             else if(check_if_player(server.map[player->x + (player->y + player->move_y ) *54])){
                 int player_id = (int)(server.map[player->x + (player->y + player->move_y ) *54] - '0' - 1);
                 sem_wait(&server.players[player_id]->sem);
+                create_drop(server.players[player_id]->c_carried + player->c_carried,server.players[player_id]->x,server.players[player_id]->y,server.players[player_id]->under);
                 player_death(server.players[player_id]);
                 sem_post(&server.players[player_id]->sem);
                 server.map[player->x + (player->y + player->move_y) *54] = 'D';
@@ -482,6 +523,7 @@ void* add_player(void* arg){
         move_player(*(server.players + id));
         sem_post(&server.players[id]->sem);
     }
+    server.players[id]->online = 0;
     server.map[server.players[id]->x + (server.players[id]->y) *54] = server.players[id]->under;
     server.is_used[id] = 0;
     sem_destroy(&server.players[id]->sem);
@@ -560,13 +602,15 @@ struct server_t * init_server(){
 
     server.number_of_beast = 0;
     server.capacity_of_beast = 10;
-    
+
     return &server;
 }
 void close_server(){
     sem_wait(&server.sem);
     free(server.map);
     server.map = NULL;
+    free(server.drops);
+    server.drops = NULL;
     sem_post(&server.sem);
     sem_destroy(&server.sem);
 }

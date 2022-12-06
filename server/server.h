@@ -38,6 +38,10 @@ struct server_t{
     struct beast_t* beasts[10];
     int number_of_beast;
     int capacity_of_beast;
+
+    struct drop_t *drops;
+    int drop_is_used[20];
+    int drop_capacity;
 };
 
 struct connection_t{
@@ -112,4 +116,7 @@ int detect_player(struct beast_t *beast);
 int check_if_player(char c);
 void campsite_update();
 
+void create_drop(int reward, int x, int y, char under);
+void get_drop(struct player_t * player);
+int init_drops();
 #endif //SERVER_H
