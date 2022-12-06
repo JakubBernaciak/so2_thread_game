@@ -2,7 +2,6 @@
 
 struct server_t server;
 
-
 void update_beasts(){
     for(int i = 0 ; i < server.number_of_beast; i++){
         pthread_mutex_lock(&server.beasts[i]->sem);
@@ -326,7 +325,7 @@ int load_map(){
 void init_player(struct player_t *player,int id, int player_pid){
     srand(time(NULL));
     sem_wait(&player->sem);
-    player->ready = 0;
+    player->online = 0;
     player->server_pid = getpid();
     player->pid = player_pid;
     player->id = id;
@@ -356,7 +355,11 @@ void get_map(struct player_t* player){
     for(int i = -2 ;i <= 2 ; i++){
         for(int j = -2 ; j <= 2; j++){
             player->map[(j+2)*5+(i+2)] = server.map[player->x + i + (player->y +j) *54];
-            player->ready = 1;
+            if(player->map[(j+2)*5+(i+2)] == 'A'){
+                player->campsite_x = server.campsite_x;
+                player->campsite_y = server.campsite_y;
+            }
+            player->online = 1;
         }
     }
 }
@@ -470,12 +473,16 @@ void* add_player(void* arg){
     get_map(server.players[id]);
     sem_post(&server.sem);
 
-    while(server.online){
+    while(server.online && server.players[id]->online){
         sem_wait(&server.players[id]->sem);
         move_player(*(server.players + id));
         sem_post(&server.players[id]->sem);
     }
+    server.map[server.players[id]->x + (server.players[id]->y) *54] = server.players[id]->under;
+    server.is_used[id] = 0;
     sem_destroy(&server.players[id]->sem);
+    server.players[id] = NULL;
+    server.size_of_players --;
     shm_unlink(name);
 
     return NULL;
@@ -524,7 +531,6 @@ void* run_lobby(void* arg){
                     
         sem_post(&connection->sem);
     }
-
     sem_destroy(&connection->sem);
     shm_unlink("lobby");
 
@@ -552,4 +558,11 @@ struct server_t * init_server(){
     server.capacity_of_beast = 10;
     
     return &server;
+}
+void close_server(){
+    sem_wait(&server.sem);
+    free(server.map);
+    server.map = NULL;
+    sem_post(&server.sem);
+    sem_destroy(&server.sem);
 }

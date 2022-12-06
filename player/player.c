@@ -3,7 +3,7 @@ void *display(void *arg){
     struct player_t *player = (struct player_t*) arg;
 
     while(1){
-        if(player->ready)
+        if(player->online)
             break;
     }
 

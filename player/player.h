@@ -17,7 +17,7 @@
 
 struct player_t{
     sem_t sem;
-    int ready;
+    int online;
     int can_move;
     int server_pid;
     int pid;

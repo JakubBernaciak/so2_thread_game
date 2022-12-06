@@ -35,9 +35,8 @@ int main(){
         }
 
     }
+    player->online = 0;
     endwin();
-    
-
 
     return 0;
 }

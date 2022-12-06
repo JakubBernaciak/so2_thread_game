@@ -37,7 +37,8 @@ struct server_t{
     struct beast_t* beasts[10];
     int number_of_beast;
     int capacity_of_beast;
-    int killed[4];
+
+    struct drop_t* drops[20];
 };
 
 struct connection_t{
@@ -57,7 +58,7 @@ struct beast_t{
 
 struct player_t{
     sem_t sem;
-    int ready;
+    int online;
     int can_move;
     int server_pid;
     int pid;
@@ -80,6 +81,14 @@ struct player_t{
     char map[25];
 };
 
+struct drop_t{
+    int x;
+    int y;
+    char under;
+    int reward;
+};
+
+
 struct server_t * init_server();
 void* run_lobby(void* arg);
 int load_map();
@@ -87,6 +96,7 @@ void get_map(struct player_t*);
 void spawn_reward(char c);
 void* start_game();
 void display();
+void close_server();
 
 void init_player(struct player_t *player,int id, int player_pid);
 void* add_player(void* arg);
@@ -101,5 +111,6 @@ void beast_kill(struct beast_t *beast);
 void update_beasts();
 int detect_player(struct beast_t *beast);
 int check_if_player(char c);
+void campsite_update();
 
 #endif //SERVER_H
