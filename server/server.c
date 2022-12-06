@@ -475,6 +475,10 @@ void* add_player(void* arg){
 
     while(server.online && server.players[id]->online){
         sem_wait(&server.players[id]->sem);
+        if(kill(server.players[id]->pid, 0) == -1){
+            sem_post(&server.players[id]->sem);
+            break;
+        }
         move_player(*(server.players + id));
         sem_post(&server.players[id]->sem);
     }

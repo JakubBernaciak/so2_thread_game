@@ -16,6 +16,7 @@
 #include <ncurses.h>
 #include <time.h>
 #include <math.h>
+#include <signal.h>
 
 struct server_t{
     sem_t sem;
@@ -37,8 +38,6 @@ struct server_t{
     struct beast_t* beasts[10];
     int number_of_beast;
     int capacity_of_beast;
-
-    struct drop_t* drops[20];
 };
 
 struct connection_t{
