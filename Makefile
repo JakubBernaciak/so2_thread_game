@@ -5,7 +5,7 @@ SERVER_FILES := server/*.h server/*.c
 OBJS := player.o server.o
 
 FLAGS := -g -lpthread -lrt -lncurses -pedantic
-OFLAGS :=
+OFLAGS := -fsanitize=address -fsanitize-recover=address -fno-omit-frame-pointer -fsanitize=undefined
 
 
 all: $(OBJS)
@@ -21,6 +21,6 @@ clean:
 	rm -rf /dev/shm/player*
 	rm -rf *.o
 p:
-	./player.o
+	./player.o 2> errlog_p.txt
 s:
-	./server.o
+	./server.o 2> errlog.txt
