@@ -18,6 +18,10 @@
 #include <math.h>
 #include <signal.h>
 
+#define MAX_NUMBER_OF_PLAYER 4
+#define MAX_NUMBER_OF_BEASTS 4
+#define MAX_NUMBER_OF_DROPS 20
+
 struct server_t{
     sem_t sem;
     int pid;
@@ -26,21 +30,21 @@ struct server_t{
     
     int size_of_players;
     int capacity_of_players;
-    int is_used[4];
-    struct player_t *players[4];
-    pthread_t players_threads[4];
+    int is_used[MAX_NUMBER_OF_PLAYER];
+    struct player_t *players[MAX_NUMBER_OF_PLAYER];
+    pthread_t players_threads[MAX_NUMBER_OF_PLAYER];
     
     int round_number;
     
     int campsite_x;
     int campsite_y;
 
-    struct beast_t* beasts[10];
+    struct beast_t* beasts[MAX_NUMBER_OF_BEASTS];
     int number_of_beast;
     int capacity_of_beast;
 
     struct drop_t *drops;
-    int drop_is_used[20];
+    int drop_is_used[MAX_NUMBER_OF_DROPS];
     int drop_capacity;
 };
 
@@ -116,7 +120,7 @@ int detect_player(struct beast_t *beast);
 int check_if_player(char c);
 void campsite_update();
 
-void create_drop(int reward, int x, int y, char under);
+void add_drop(int reward, int x, int y, char under);
 void get_drop(struct player_t * player);
 int init_drops();
 
