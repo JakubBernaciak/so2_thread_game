@@ -2,6 +2,15 @@
 
 struct server_t server;
 
+struct connection_t *create_connection(int id, int player_pid){
+    struct connection_t *ptr = calloc(1,sizeof(struct connection_t));
+    if(!ptr)
+        return NULL;
+    ptr->id = id;
+    ptr->player_pid = player_pid;
+    return ptr;
+}
+
 void get_drop(struct player_t * player){
     for(int i = 0; i < server.drop_capacity; i++){
         if(server.drop_is_used[i]){
@@ -34,7 +43,7 @@ int init_drops(){
     if(server.drops == NULL)
         return 2;
     for(int i = 0; i < server.drop_capacity; i++){
-        server.is_used[i] = 0;
+        server.drop_is_used[i] = 0;
     }
     
     return 0;
@@ -213,7 +222,7 @@ int detect_player(struct beast_t *beast){
     return -1;
 }
 
-void *spawn_beast(void *arg){
+void *spawn_beast(){
     srand(time(NULL));
     struct beast_t beast;
     beast.can_move = 1;
@@ -500,6 +509,8 @@ void* add_player(void* arg){
     struct connection_t *connection = (struct connection_t *) arg;
     int id = connection->id;
     int player_pid = connection->player_pid;
+    free(connection);
+    connection = NULL;
 
     char name[10] = "player_";
     name[7] = (char)('0' + id);
@@ -534,7 +545,7 @@ void* add_player(void* arg){
     return NULL;
 }
 
-void* run_lobby(void* arg){
+void* run_lobby(){
     sem_wait(&server.sem);
     int shm_ID = shm_open("lobby", O_CREAT | O_RDWR, 0666);
     if(shm_ID == -1){
@@ -558,8 +569,8 @@ void* run_lobby(void* arg){
             sem_wait(&server.sem);
             server.is_used[connection->id] = 1;
             server.size_of_players++;
-            struct connection_t temp_connection = {.id = connection->id, .player_pid = connection->player_pid };
-            pthread_create(&server.players_threads[connection->id], NULL, add_player, &temp_connection);
+            struct connection_t *ptr = create_connection(connection->id, connection->player_pid);
+            pthread_create(&server.players_threads[connection->id], NULL, add_player, ptr);
             sem_post(&server.sem);
         }
 

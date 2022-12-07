@@ -93,7 +93,7 @@ struct drop_t{
 
 
 struct server_t * init_server();
-void* run_lobby(void* arg);
+void* run_lobby();
 int load_map();
 void get_map(struct player_t*);
 void spawn_reward(char c);
@@ -108,7 +108,7 @@ void interaction(struct player_t*);
 void update_players();
 void player_death(struct player_t * player);
 
-void *spawn_beast(void *arg);
+void *spawn_beast();
 void move_beast(struct beast_t *beast,int x,int y);
 void beast_kill(struct beast_t *beast);
 void update_beasts();
@@ -119,4 +119,6 @@ void campsite_update();
 void create_drop(int reward, int x, int y, char under);
 void get_drop(struct player_t * player);
 int init_drops();
+
+struct connection_t *create_connection(int id, int player_pid);
 #endif //SERVER_H
