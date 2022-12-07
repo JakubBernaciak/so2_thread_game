@@ -34,12 +34,11 @@ void get_drop(struct player_t * player){
     }
 }
 
-void add_drop(int reward, int x, int y, char under){
+void add_drop(int reward, position_t position, char under){
     for(int i = 0; i < server.drop_capacity; i++){
         if(!server.drop_is_used[i]){
             server.drops[i].reward = reward;
-            server.drops[i].position.x = x;
-            server.drops[i].position.y = y;
+            server.drops[i].position = position;
             server.drops[i].under = under;
             server.drop_is_used[i] = 1;
             break;
@@ -80,7 +79,7 @@ void beast_kill(struct beast_t *beast){
     int player_id = (int)(beast->under - '0' - 1);
     sem_wait(&server.players[player_id]->sem);
     beast->under = 'D';
-    add_drop(server.players[player_id]->c_carried,beast->position.x,beast->position.y,server.players[player_id]->under);
+    add_drop(server.players[player_id]->c_carried,beast->position, server.players[player_id]->under);
     player_death(server.players[player_id]);
     sem_post(&server.players[player_id]->sem);
 }
@@ -440,7 +439,7 @@ void move_player(struct player_t* player){
             else if(check_if_player(server.map[player->position.x + player->move_x + (player->position.y  ) *54])){
                 int player_id = (int)(server.map[player->position.x + player->move_x + (player->position.y) *54] - '0' - 1);
                 sem_wait(&server.players[player_id]->sem);
-                add_drop(server.players[player_id]->c_carried + player->c_carried,server.players[player_id]->position.x,server.players[player_id]->position.y,server.players[player_id]->under);
+                add_drop(server.players[player_id]->c_carried + player->c_carried,server.players[player_id]->position, server.players[player_id]->under);
                 player_death(server.players[player_id]);
                 sem_post(&server.players[player_id]->sem);
                 server.map[player->position.x + player->move_x + (player->position.y) *54] = 'D';
@@ -470,7 +469,7 @@ void move_player(struct player_t* player){
             else if(check_if_player(server.map[player->position.x + (player->position.y + player->move_y ) *54])){
                 int player_id = (int)(server.map[player->position.x + (player->position.y + player->move_y ) *54] - '0' - 1);
                 sem_wait(&server.players[player_id]->sem);
-                add_drop(server.players[player_id]->c_carried + player->c_carried,server.players[player_id]->position.x,server.players[player_id]->position.y,server.players[player_id]->under);
+                add_drop(server.players[player_id]->c_carried + player->c_carried,server.players[player_id]->position, server.players[player_id]->under);
                 player_death(server.players[player_id]);
                 sem_post(&server.players[player_id]->sem);
                 server.map[player->position.x + (player->position.y + player->move_y) *54] = 'D';
@@ -597,8 +596,7 @@ struct server_t * init_server(){
     }
 
     server.round_number = 0;
-    server.campsite.x = 24;// TO DO CREATE FUNCTION to FIND X AND Y OF CAMPSITE
-    server.campsite.y = 12;// TO DO -||-
+    server.campsite = (position_t){.x = 24, .y = 12};// TO DO CREATE FUNCTION to FIND X AND Y OF CAMPSITE
 
     server.number_of_beast = 0;
     server.capacity_of_beast = MAX_NUMBER_OF_BEASTS;

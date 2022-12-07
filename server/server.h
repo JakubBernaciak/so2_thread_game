@@ -95,9 +95,6 @@ struct drop_t{
     int reward;
 };
 
-
-
-
 struct server_t * init_server();
 void* run_lobby();
 int load_map();
@@ -122,7 +119,7 @@ int detect_player(struct beast_t *beast);
 int check_if_player(char c);
 void campsite_update();
 
-void add_drop(int reward, int x, int y, char under);
+void add_drop(int reward, position_t position, char under);
 void get_drop(struct player_t * player);
 int init_drops();
 
