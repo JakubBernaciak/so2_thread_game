@@ -127,5 +127,6 @@ void get_drop(struct player_t * player);
 int init_drops();
 
 struct connection_t *create_connection(int id, int player_pid);
+position_t get_free_slot_on_map();
 
 #endif //SERVER_H

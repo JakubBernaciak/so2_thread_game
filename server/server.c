@@ -2,6 +2,16 @@
 
 struct server_t server;
 
+position_t get_free_slot_on_map(){
+    position_t pos;
+    srand(time(NULL));
+    do{
+        pos.x = rand()%48 + 2;
+        pos.y = rand()%22 + 2;
+    }while(server.map[pos.x + pos.y *54] != ' ');
+    return pos;
+}
+
 struct connection_t *create_connection(int id, int player_pid){
     struct connection_t *ptr = calloc(1,sizeof(struct connection_t));
     if(!ptr)
@@ -62,11 +72,8 @@ void update_beasts(){
 void player_death(struct player_t * player){
     player->c_carried = 0;
     player->deaths++;
-    do{
-        player->position.y = rand()%22 + 2;
-        player->position.x = rand()%48 + 2;
-        player->under = server.map[player->position.x + player->position.y *54];
-    }while(player->under != ' ');
+    player->position = get_free_slot_on_map();
+    player->under = server.map[player->position.x + player->position.y *54];
     server.map[player->position.x + player->position.y *54] = '0' + player->id + 1; 
 }
 void beast_kill(struct beast_t *beast){
@@ -223,16 +230,11 @@ int detect_player(struct beast_t *beast){
 }
 
 void *spawn_beast(){
-    srand(time(NULL));
     struct beast_t beast;
     beast.can_move = 1;
     beast.under = ' ';
     sem_wait(&server.sem);
-    do{
-        beast.position.y = rand()%22 + 2;
-        beast.position.x = rand()%48 + 2;
-        
-    }while(server.map[beast.position.x + beast.position.y *54] != ' ');
+    beast.position = get_free_slot_on_map();
     server.map[beast.position.x + beast.position.y *54] = '*';
     server.beasts[server.number_of_beast++] = &beast;
     sem_post(&server.sem);
@@ -270,16 +272,8 @@ void *spawn_beast(){
 
 void spawn_reward(char c){
     sem_wait(&server.sem);
-    srand(time(NULL));
-    int x;
-    int y;
-    do{
-        y = rand()%22 + 2;
-        x = rand()%48 + 2;
-        
-    }while(server.map[x + y *54] != ' ');
-
-    server.map[x + y *54] = c;
+    position_t position = get_free_slot_on_map();
+    server.map[position.x + position.y *54] = c;
     sem_post(&server.sem);
 }
 void update_players(){
@@ -371,7 +365,6 @@ int load_map(){
 
 
 void init_player(struct player_t *player,int id, int player_pid){
-    srand(time(NULL));
     sem_wait(&player->sem);
     player->online = 0;
     player->server_pid = getpid();
@@ -384,12 +377,8 @@ void init_player(struct player_t *player,int id, int player_pid){
     player->campsite.x = 0;
     player->campsite.y = 0;
 
-    do{
-        player->position.y = rand()%22 + 2;
-        player->position.x = rand()%48 + 2;
-        player->under = server.map[player->position.x + player->position.y *54];
-    }while(player->under != ' ');
-
+    player->position = get_free_slot_on_map();
+    player->under = server.map[player->position.x + player->position.y *54];
     server.map[player->position.x + player->position.y *54] = '0' + player->id +1;
 
     player->c_brought = 0;
