@@ -15,6 +15,11 @@
 #include <sys/types.h>
 #include <ncurses.h>
 
+typedef struct position_t{
+    int x;
+    int y;
+} position_t;
+
 struct player_t{
     sem_t sem;
     int online;
@@ -23,11 +28,9 @@ struct player_t{
     int pid;
     int id;
 
-    int campsite_x;
-    int campsite_y;
-
-    int x;
-    int y;
+    position_t campsite;
+    position_t position;
+    
     int move_x;
     int move_y;
 

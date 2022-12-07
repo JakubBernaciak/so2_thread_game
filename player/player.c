@@ -20,13 +20,13 @@ void *display(void *arg){
 
         
         mvprintw(row++,col++,"Server's PID: %d",player->server_pid);
-        mvprintw(row++,col,"Campsite X/Y: %d/%d",player->campsite_x,player->campsite_y);
+        mvprintw(row++,col,"Campsite X/Y: %d/%d",player->campsite.x,player->campsite.y);
         mvprintw(row++,col--,"Round number: %d",player->round);
         row++;
 
         mvprintw(row++, col++, "Player:");
         mvprintw(row++, col, "Number: %d",player->id +1);
-        mvprintw(row++, col, "Curr X/Y: %d/%d",player->x,player->y);
+        mvprintw(row++, col, "Curr X/Y: %d/%d",player->position.x,player->position.y);
         mvprintw(row++, col--, "Deaths: %d",player->deaths);
         row++;
         mvprintw(row++,col++,"Coins");

@@ -22,6 +22,11 @@
 #define MAX_NUMBER_OF_BEASTS 4
 #define MAX_NUMBER_OF_DROPS 20
 
+typedef struct position_t{
+    int x;
+    int y;
+} position_t;
+
 struct server_t{
     sem_t sem;
     int pid;
@@ -36,8 +41,7 @@ struct server_t{
     
     int round_number;
     
-    int campsite_x;
-    int campsite_y;
+    position_t campsite;
 
     struct beast_t* beasts[MAX_NUMBER_OF_BEASTS];
     int number_of_beast;
@@ -57,8 +61,7 @@ struct connection_t{
 
 struct beast_t{
     pthread_mutex_t sem;
-    int x;
-    int y;
+    position_t position;
     int can_move;
     char under;
 };
@@ -71,11 +74,9 @@ struct player_t{
     int pid;
     int id;
 
-    int campsite_x;
-    int campsite_y;
-
-    int x;
-    int y;
+    position_t campsite;
+    position_t position;
+    
     int move_x;
     int move_y;
 
@@ -89,11 +90,12 @@ struct player_t{
 };
 
 struct drop_t{
-    int x;
-    int y;
+    position_t position;
     char under;
     int reward;
 };
+
+
 
 
 struct server_t * init_server();
@@ -125,4 +127,5 @@ void get_drop(struct player_t * player);
 int init_drops();
 
 struct connection_t *create_connection(int id, int player_pid);
+
 #endif //SERVER_H
