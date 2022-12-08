@@ -90,6 +90,8 @@ void move_beast(struct beast_t *beast,int x,int y){
             server.map[beast->position.x + beast->position.y *54] = beast->under;
             beast->position.x += x;
             beast->under = server.map[beast->position.x + beast->position.y *54];
+            if(beast->under == '#')
+                beast->can_move ++;
             if(beast->under >= '1' && beast->under <= '4'){
                 beast_kill(beast);
             }
@@ -101,6 +103,8 @@ void move_beast(struct beast_t *beast,int x,int y){
             server.map[beast->position.x + beast->position.y *54] = beast->under;
             beast->position.y += y;
             beast->under = server.map[beast->position.x + beast->position.y *54];
+            if(beast->under == '#')
+                beast->can_move ++;
             if(beast->under >= '1' && beast->under <= '4'){
                 beast_kill(beast);
             }
@@ -108,7 +112,7 @@ void move_beast(struct beast_t *beast,int x,int y){
         }
 
     }
-    beast->can_move = 1;
+    beast->can_move ++;
 }
 int check_if_player(char c){
     if(c >= '1' && c <= '4')

@@ -4,8 +4,8 @@ PLAYER_FILES:= player/*.c player/*.h
 SERVER_FILES := server/*.h server/*.c
 OBJS := player.o server.o
 
-FLAGS := -g -O1 -lpthread -lrt -lncurses -pedantic -Wall -Wextra #-Werror -Wfatal-errors
-OFLAGS := -fsanitize=thread -fsanitize-recover=address -fno-omit-frame-pointer -fsanitize=undefined
+FLAGS := -g -lpthread -lrt -lncurses #-pedantic #-Wall -Wextra #-Werror -Wfatal-errors -O1
+OFLAGS := #-fsanitize=thread -fsanitize-recover=address -fno-omit-frame-pointer -fsanitize=undefined
 
 
 all: $(OBJS)
