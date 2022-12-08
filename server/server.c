@@ -2,6 +2,20 @@
 
 struct server_t server;
 
+int is_player_online(struct player_t * player){
+    sem_wait(&player->sem);
+    int res = player->online;
+    sem_post(&player->sem);
+    return res;
+}
+
+int is_server_online(){
+    sem_wait(&server.sem);
+    int res = server.online;
+    sem_post(&server.sem);
+    return res;
+}
+
 position_t get_free_slot_on_map(){
     position_t pos;
     srand(time(NULL));
@@ -46,11 +60,11 @@ void add_drop(int reward, position_t position, char under){
 
 void update_beasts(){
     for(int i = 0 ; i < server.number_of_beast; i++){
-        pthread_mutex_lock(&server.beasts[i]->sem);
+        sem_wait(&server.beasts[i]->sem);
         if(server.beasts[i]->can_move){
             server.beasts[i]->can_move--;
         }
-        pthread_mutex_unlock(&server.beasts[i]->sem);
+        sem_post(&server.beasts[i]->sem);
     }
 }
 
@@ -218,17 +232,17 @@ void *spawn_beast(){
     struct beast_t beast;
     beast.can_move = 1;
     beast.under = ' ';
+    sem_init(&beast.sem,0,1);
     sem_wait(&server.sem);
     beast.position = get_free_slot_on_map();
     server.map[beast.position.x + beast.position.y *54] = '*';
     server.beasts[server.number_of_beast++] = &beast;
     sem_post(&server.sem);
 
-    while(server.online){
-        
+    while(is_server_online()){
+        sem_wait(&beast.sem);
         if(!beast.can_move){
             sem_wait(&server.sem);
-            pthread_mutex_lock(&beast.sem);
             int los = detect_player(&beast);
             if(los == -1){
                 los = rand()%4;
@@ -247,9 +261,9 @@ void *spawn_beast(){
                     move_beast(&beast,0,-1);
                     break;
             }
-            pthread_mutex_unlock(&beast.sem);
             sem_post(&server.sem);
         }
+        sem_post(&beast.sem);
         
     }
     return NULL;
@@ -275,10 +289,10 @@ void update_players(){
 }
 
 void* start_game(){
-    while(server.online){
+    while(is_server_online()){
         sem_wait(&server.sem);
         server.round_number++;
-        display();
+        // display();
         update_beasts();
         update_players();
         sem_post(&server.sem);
@@ -343,7 +357,9 @@ int load_map(){
         free(server.map);
         return 1;
     }
-    fscanf(f,"%[^Q]",server.map);
+    int c = fscanf(f,"%[^Q]",server.map);
+    if(c <=0)
+        return 1;
     fclose(f);
     return 0;
 }
@@ -499,7 +515,7 @@ void* add_player(void* arg){
     get_map(server.players[id]);
     sem_post(&server.sem);
 
-    while(server.online && server.players[id]->online){
+    while(is_server_online() && is_player_online(server.players[id])){
         sem_wait(&server.players[id]->sem);
         if(kill(server.players[id]->pid, 0) == -1){
             sem_post(&server.players[id]->sem);
@@ -508,11 +524,14 @@ void* add_player(void* arg){
         move_player(*(server.players + id));
         sem_post(&server.players[id]->sem);
     }
+
+    sem_wait(&server.sem);
     server.players[id]->online = 0;
     server.map[server.players[id]->position.x + (server.players[id]->position.y) *54] = server.players[id]->under;
     server.is_used[id] = 0;
     sem_destroy(&server.players[id]->sem);
-    server.players[id] = NULL;
+    sem_post(&server.sem);
+
     shm_unlink(name);
 
     return NULL;
@@ -534,15 +553,22 @@ void* run_lobby(){
     sem_init(&connection->sem,1,1);
     connection->used = 1;
     connection->id = -1;
+    int number_of_threads_runned = 0;
+    pthread_t players_threads[MAX_NUMBER_OF_PLAYERS];
 
-    while(server.online){
+    while(is_server_online()){
         sem_wait(&connection->sem);
         
         if(connection->used == 1 && connection->id != -1){
             sem_wait(&server.sem);
             server.is_used[connection->id] = 1;
+            
+            if(number_of_threads_runned < connection->id+1){
+                number_of_threads_runned = connection->id+1;
+            }
+
             struct connection_t *ptr = create_connection(connection->id, connection->player_pid);
-            pthread_create(&server.players_threads[connection->id], NULL, add_player, ptr);
+            pthread_create(&players_threads[connection->id], NULL, add_player, ptr);
             sem_post(&server.sem);
         }
 
@@ -557,9 +583,13 @@ void* run_lobby(){
             }
         }
         sem_post(&server.sem);
-                    
         sem_post(&connection->sem);
     }
+
+    for(int i = 0 ; i < number_of_threads_runned; i++){
+        pthread_join(players_threads[i],NULL);
+    }
+
     sem_destroy(&connection->sem);
     shm_unlink("lobby");
 
@@ -580,7 +610,6 @@ struct server_t * init_server(){
     server.campsite = (position_t){.x = 24, .y = 12};// TO DO CREATE FUNCTION to FIND X AND Y OF CAMPSITE
 
     server.number_of_beast = 0;
-    server.capacity_of_beast = MAX_NUMBER_OF_BEASTS;
     for(int i = 0; i < MAX_NUMBER_OF_DROPS; i++)
         server.drop_is_used[i] = 0;
     return &server;

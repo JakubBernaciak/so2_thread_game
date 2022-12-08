@@ -37,9 +37,9 @@ int main(){
         return 1;
     }
     initscr();
-    pthread_t display_thread;
-    pthread_create(&display_thread,NULL,start_game,NULL);
-
+    pthread_t game_thread;
+    pthread_create(&game_thread,NULL,start_game,NULL);
+    pthread_t beasts_threads[MAX_NUMBER_OF_BEASTS];
     while(1){
         int c = getch();
         if(c == 'q')
@@ -47,14 +47,28 @@ int main(){
         if(c == 'c' || c == 't' || c == 'T')
             spawn_reward(c);
         if(c == 'b'){
-            pthread_t thread;
-            pthread_create(&thread,NULL,spawn_beast,NULL);
+            sem_wait(&server->sem);
+            if(server->number_of_beast < MAX_NUMBER_OF_BEASTS){    
+                pthread_create(&beasts_threads[server->number_of_beast],NULL,spawn_beast,NULL);  
+            }
+            sem_post(&server->sem);
         }
     }
+    sem_wait(&server->sem);
     server->online = 0;
+    sem_post(&server->sem);
     endwin();
+
+    sem_wait(&server->sem);
+    int size = server->number_of_beast;
+    sem_post(&server->sem);
+    for(int i = 0; i < size ; i++){
+        pthread_join(beasts_threads[i],NULL);
+    }
     
     pthread_join(lobby_thread,NULL);
+    pthread_join(game_thread,NULL);
+    close_server();
 
     return 0;
 }

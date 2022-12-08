@@ -41,7 +41,6 @@ struct server_t{
     
     int is_used[MAX_NUMBER_OF_PLAYERS];
     struct player_t *players[MAX_NUMBER_OF_PLAYERS];
-    pthread_t players_threads[MAX_NUMBER_OF_PLAYERS];
     
     int round_number;
     
@@ -49,7 +48,6 @@ struct server_t{
 
     struct beast_t* beasts[MAX_NUMBER_OF_BEASTS];
     int number_of_beast;
-    int capacity_of_beast;
 
     drop_t drops[MAX_NUMBER_OF_DROPS];
     int drop_is_used[MAX_NUMBER_OF_DROPS];
@@ -63,7 +61,7 @@ struct connection_t{
 };
 
 struct beast_t{
-    pthread_mutex_t sem;
+    sem_t sem;
     position_t position;
     int can_move;
     char under;
@@ -123,5 +121,7 @@ void get_drop(struct player_t * player);
 
 struct connection_t *create_connection(int id, int player_pid);
 position_t get_free_slot_on_map();
+int is_server_online();
+int is_player_online(struct player_t * player);
 
 #endif //SERVER_H
