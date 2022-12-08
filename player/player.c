@@ -1,13 +1,17 @@
 #include "player.h"
+int is_player_online(struct player_t * player){
+    sem_wait(&player->sem);
+    int res = player->online;
+    sem_post(&player->sem);
+    return res;
+}
+
 void *display(void *arg){
     struct player_t *player = (struct player_t*) arg;
 
-    while(1){
-        if(player->online)
-            break;
-    }
+    while(!is_player_online(player));
 
-    while(1){
+    while(is_player_online(player)){
         sem_wait(&player->sem);
         clear();
         for(int i = 0; i<25 ; i++){
@@ -18,7 +22,6 @@ void *display(void *arg){
         int row = 0;
         int col = 35;
 
-        
         mvprintw(row++,col++,"Server's PID: %d",player->server_pid);
         mvprintw(row++,col,"Campsite X/Y: %d/%d",player->campsite.x,player->campsite.y);
         mvprintw(row++,col--,"Round number: %d",player->round);
@@ -33,12 +36,11 @@ void *display(void *arg){
         mvprintw(row++,col,"Carried: %d",player->c_carried);
         mvprintw(row++,col,"Brought: %d",player->c_brought);
         
-        
-        
         sem_post(&player->sem);
         refresh();
-        usleep(200000);
+        // usleep(200000);
     }
+    return NULL;
 }
 
 int get_id_from_server(){

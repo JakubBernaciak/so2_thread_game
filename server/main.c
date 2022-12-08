@@ -26,16 +26,21 @@ int main(){
     int err_code = load_map();
     if(err_code == 2){
         puts("Couldn't allocate memory for map");
+        sem_wait(&server->sem);
         server->online = 0;
+        sem_post(&server->sem);
         close_server();
         return 2;
     }
     else if(err_code == 1){
-        puts("Couldn't open file with map");
+        puts("Couldn't read map");
+        sem_wait(&server->sem);
         server->online = 0;
+        sem_post(&server->sem);
         close_server();
         return 1;
     }
+    
     initscr();
     pthread_t game_thread;
     pthread_create(&game_thread,NULL,start_game,NULL);

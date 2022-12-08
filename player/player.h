@@ -53,5 +53,6 @@ struct connection_t{
 int get_id_from_server();
 struct player_t* connect_to_server(int id);
 void *display(void *arg);
+int is_player_online(struct player_t * player);
 
 #endif //PLAYER_H

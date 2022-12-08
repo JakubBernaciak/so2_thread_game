@@ -21,6 +21,8 @@
 #define MAX_NUMBER_OF_PLAYERS 4
 #define MAX_NUMBER_OF_BEASTS 4
 #define MAX_NUMBER_OF_DROPS 20
+#define MAP_WEIGHT 54
+#define MAP_HEIGHT 27
 
 typedef struct position_t{
     int x;
@@ -114,13 +116,12 @@ void beast_kill(struct beast_t *beast);
 void update_beasts();
 int detect_player(struct beast_t *beast);
 int check_if_player(char c);
-void campsite_update();
 
 void add_drop(int reward, position_t position, char under);
 void get_drop(struct player_t * player);
 
 struct connection_t *create_connection(int id, int player_pid);
-position_t get_free_slot_on_map();
+position_t get_free_field_on_map();
 int is_server_online();
 int is_player_online(struct player_t * player);
 

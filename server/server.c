@@ -16,13 +16,13 @@ int is_server_online(){
     return res;
 }
 
-position_t get_free_slot_on_map(){
+position_t get_free_field_on_map(){
     position_t pos;
     srand(time(NULL));
     do{
-        pos.x = rand()%48 + 2;
-        pos.y = rand()%22 + 2;
-    }while(server.map[pos.x + pos.y *54] != ' ');
+        pos.x = rand()%MAP_WEIGHT;
+        pos.y = rand()%MAP_HEIGHT;
+    }while(server.map[pos.x + pos.y * MAP_WEIGHT] != ' ');
     return pos;
 }
 
@@ -71,7 +71,7 @@ void update_beasts(){
 void player_death(struct player_t * player){
     player->c_carried = 0;
     player->deaths++;
-    player->position = get_free_slot_on_map();
+    player->position = get_free_field_on_map();
     player->under = server.map[player->position.x + player->position.y *54];
     server.map[player->position.x + player->position.y *54] = '0' + player->id + 1; 
 }
@@ -86,7 +86,7 @@ void beast_kill(struct beast_t *beast){
 
 void move_beast(struct beast_t *beast,int x,int y){
     if(x){
-        if(server.map[beast->position.x + x + beast->position.y *54] != '|' && server.map[beast->position.x + x + beast->position.y *54] != '*'){
+        if(server.map[beast->position.x + x + (beast->position.y)*54] != '|' && server.map[beast->position.x + x + (beast->position.y)*54] != '*'){
             server.map[beast->position.x + beast->position.y *54] = beast->under;
             beast->position.x += x;
             beast->under = server.map[beast->position.x + beast->position.y *54];
@@ -234,7 +234,7 @@ void *spawn_beast(){
     beast.under = ' ';
     sem_init(&beast.sem,0,1);
     sem_wait(&server.sem);
-    beast.position = get_free_slot_on_map();
+    beast.position = get_free_field_on_map();
     server.map[beast.position.x + beast.position.y *54] = '*';
     server.beasts[server.number_of_beast++] = &beast;
     sem_post(&server.sem);
@@ -271,10 +271,11 @@ void *spawn_beast(){
 
 void spawn_reward(char c){
     sem_wait(&server.sem);
-    position_t position = get_free_slot_on_map();
+    position_t position = get_free_field_on_map();
     server.map[position.x + position.y *54] = c;
     sem_post(&server.sem);
 }
+
 void update_players(){
     for(int i = 0 ; i < MAX_NUMBER_OF_PLAYERS ; i++ ){
         if(server.is_used[i] == 1){
@@ -292,7 +293,7 @@ void* start_game(){
     while(is_server_online()){
         sem_wait(&server.sem);
         server.round_number++;
-        // display();
+        display();
         update_beasts();
         update_players();
         sem_post(&server.sem);
@@ -343,12 +344,11 @@ void display(){
             sem_post(&server.players[i]->sem);
         }
     }
-    mvprintw(100,100," ");
     refresh(); 
 }
 
 int load_map(){
-    server.map = calloc(27*54,sizeof(char));
+    server.map = calloc(MAP_WEIGHT * MAP_HEIGHT,sizeof(char));
     if(server.map == NULL)
         return 2;
     
@@ -358,8 +358,11 @@ int load_map(){
         return 1;
     }
     int c = fscanf(f,"%[^Q]",server.map);
-    if(c <=0)
+    if(c <=0){
+        free(server.map);
+        fclose(f);
         return 1;
+    }
     fclose(f);
     return 0;
 }
@@ -367,25 +370,22 @@ int load_map(){
 
 void init_player(struct player_t *player,int id, int player_pid){
     sem_wait(&player->sem);
-    player->online = 0;
     player->server_pid = getpid();
     player->pid = player_pid;
     player->id = id;
+
+    player->online = 0;
     player->can_move = 0;
     player->move_x = 0;
     player->move_y = 0;
-
-    player->campsite.x = 0;
-    player->campsite.y = 0;
-
-    player->position = get_free_slot_on_map();
-    player->under = server.map[player->position.x + player->position.y *54];
-    server.map[player->position.x + player->position.y *54] = '0' + player->id +1;
-
     player->c_brought = 0;
     player->c_carried = 0;
-
     player->deaths = 0;
+    player->campsite = (position_t){.x = 0,.y = 0};
+
+    player->position = get_free_field_on_map();
+    player->under = server.map[player->position.x + player->position.y *54];
+    server.map[player->position.x + player->position.y *54] = '0' + player->id +1;
     sem_post(&player->sem);
 }
 
@@ -516,7 +516,7 @@ void* add_player(void* arg){
     sem_post(&server.sem);
 
     while(is_server_online() && is_player_online(server.players[id])){
-        sem_wait(&server.players[id]->sem);
+        sem_trywait(&server.players[id]->sem);
         if(kill(server.players[id]->pid, 0) == -1){
             sem_post(&server.players[id]->sem);
             break;
@@ -601,17 +601,16 @@ struct server_t * init_server(){
     sem_init(&server.sem,1,1);
     server.pid = getpid();
     server.online = 0;
-
-    for(int i = 0; i < MAX_NUMBER_OF_PLAYERS; i++){
-        server.is_used[i] = 0;
-    }
-
     server.round_number = 0;
+    server.number_of_beast = 0;
     server.campsite = (position_t){.x = 24, .y = 12};// TO DO CREATE FUNCTION to FIND X AND Y OF CAMPSITE
 
-    server.number_of_beast = 0;
+    for(int i = 0; i < MAX_NUMBER_OF_PLAYERS; i++)
+        server.is_used[i] = 0;
+    
     for(int i = 0; i < MAX_NUMBER_OF_DROPS; i++)
         server.drop_is_used[i] = 0;
+    
     return &server;
 }
 void close_server(){

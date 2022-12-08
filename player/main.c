@@ -12,8 +12,9 @@ int main(){
     }
 
     struct player_t *player = connect_to_server(id);
-    pthread_t thread;
+    
     initscr();
+    pthread_t thread;
     pthread_create(&thread,NULL,display,player);
     while(player->online){
         int c = getch();
@@ -35,8 +36,11 @@ int main(){
         }
 
     }
+    sem_wait(&player->sem);
     player->online = 0;
+    sem_post(&player->sem);
     endwin();
+    pthread_join(thread,NULL);
 
     return 0;
 }
