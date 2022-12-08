@@ -262,7 +262,7 @@ void spawn_reward(char c){
     sem_post(&server.sem);
 }
 void update_players(){
-    for(int i = 0 ; i < server.capacity_of_players ; i++ ){
+    for(int i = 0 ; i < MAX_NUMBER_OF_PLAYERS ; i++ ){
         if(server.is_used[i] == 1){
             sem_wait(&server.players[i]->sem);
             if(server.players[i]->can_move)
@@ -316,7 +316,7 @@ void display(){
     mvprintw(row++, col, "%s%8s%8s%8s","-","-","-","-");
 
     row-=7;
-    for(int i = 0 ; i < server.capacity_of_players ; i++ ){
+    for(int i = 0 ; i < MAX_NUMBER_OF_PLAYERS ; i++ ){
         if(server.is_used[i] == 1){
             sem_wait(&server.players[i]->sem);
             mvprintw(row++,col + 8*i,"%d",server.players[i]->pid);
@@ -513,7 +513,6 @@ void* add_player(void* arg){
     server.is_used[id] = 0;
     sem_destroy(&server.players[id]->sem);
     server.players[id] = NULL;
-    server.size_of_players --;
     shm_unlink(name);
 
     return NULL;
@@ -542,7 +541,6 @@ void* run_lobby(){
         if(connection->used == 1 && connection->id != -1){
             sem_wait(&server.sem);
             server.is_used[connection->id] = 1;
-            server.size_of_players++;
             struct connection_t *ptr = create_connection(connection->id, connection->player_pid);
             pthread_create(&server.players_threads[connection->id], NULL, add_player, ptr);
             sem_post(&server.sem);
@@ -552,7 +550,7 @@ void* run_lobby(){
         connection->used = 0;
 
         sem_wait(&server.sem);  
-        for(int i = 0 ; i < server.capacity_of_players ; i++){
+        for(int i = 0 ; i < MAX_NUMBER_OF_PLAYERS; i++){
             if(server.is_used[i] == 0){
                 connection->id = i;
                 break;
@@ -574,10 +572,7 @@ struct server_t * init_server(){
     server.pid = getpid();
     server.online = 0;
 
-    server.capacity_of_players = MAX_NUMBER_OF_PLAYER;
-    server.size_of_players = 0;
-
-    for(int i = 0; i < server.capacity_of_players; i++){
+    for(int i = 0; i < MAX_NUMBER_OF_PLAYERS; i++){
         server.is_used[i] = 0;
     }
 

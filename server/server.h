@@ -18,7 +18,7 @@
 #include <math.h>
 #include <signal.h>
 
-#define MAX_NUMBER_OF_PLAYER 4
+#define MAX_NUMBER_OF_PLAYERS 4
 #define MAX_NUMBER_OF_BEASTS 4
 #define MAX_NUMBER_OF_DROPS 20
 
@@ -39,11 +39,9 @@ struct server_t{
     int online;
     char* map;
     
-    int size_of_players;
-    int capacity_of_players;
-    int is_used[MAX_NUMBER_OF_PLAYER];
-    struct player_t *players[MAX_NUMBER_OF_PLAYER];
-    pthread_t players_threads[MAX_NUMBER_OF_PLAYER];
+    int is_used[MAX_NUMBER_OF_PLAYERS];
+    struct player_t *players[MAX_NUMBER_OF_PLAYERS];
+    pthread_t players_threads[MAX_NUMBER_OF_PLAYERS];
     
     int round_number;
     
