@@ -2,10 +2,6 @@
 
 int main(){
     struct server_t *server = init_server();
-    if(init_drops() == 2){
-        puts("Couldn't allocate memory for drops");
-        return 2;
-    }
     
     pthread_t lobby_thread;
     pthread_create(&lobby_thread, NULL, run_lobby, NULL);

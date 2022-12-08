@@ -27,6 +27,12 @@ typedef struct position_t{
     int y;
 } position_t;
 
+typedef struct drop_t{
+    position_t position;
+    char under;
+    int reward;
+} drop_t;
+
 struct server_t{
     sem_t sem;
     int pid;
@@ -47,9 +53,8 @@ struct server_t{
     int number_of_beast;
     int capacity_of_beast;
 
-    struct drop_t *drops;
+    drop_t drops[MAX_NUMBER_OF_DROPS];
     int drop_is_used[MAX_NUMBER_OF_DROPS];
-    int drop_capacity;
 };
 
 struct connection_t{
@@ -89,11 +94,7 @@ struct player_t{
     char map[25];
 };
 
-struct drop_t{
-    position_t position;
-    char under;
-    int reward;
-};
+
 
 struct server_t * init_server();
 void* run_lobby();
@@ -121,7 +122,6 @@ void campsite_update();
 
 void add_drop(int reward, position_t position, char under);
 void get_drop(struct player_t * player);
-int init_drops();
 
 struct connection_t *create_connection(int id, int player_pid);
 position_t get_free_slot_on_map();

@@ -22,7 +22,7 @@ struct connection_t *create_connection(int id, int player_pid){
 }
 
 void get_drop(struct player_t * player){
-    for(int i = 0; i < server.drop_capacity; i++){
+    for(int i = 0; i < MAX_NUMBER_OF_DROPS; i++){
         if(server.drop_is_used[i]){
             if(player->position.x == server.drops[i].position.x && player->position.y == server.drops[i].position.y){
                 player->under = server.drops[i].under;
@@ -35,27 +35,13 @@ void get_drop(struct player_t * player){
 }
 
 void add_drop(int reward, position_t position, char under){
-    for(int i = 0; i < server.drop_capacity; i++){
+    for(int i = 0; i < MAX_NUMBER_OF_DROPS; i++){
         if(!server.drop_is_used[i]){
-            server.drops[i].reward = reward;
-            server.drops[i].position = position;
-            server.drops[i].under = under;
+            server.drops[i] = (drop_t){.reward = reward, .position = position, .under = under};
             server.drop_is_used[i] = 1;
             break;
         }
     }
-}
-
-int init_drops(){
-    server.drop_capacity = MAX_NUMBER_OF_DROPS;
-    server.drops = (struct drop_t*)calloc(server.drop_capacity,sizeof(struct drop_t));
-    if(server.drops == NULL)
-        return 2;
-    for(int i = 0; i < server.drop_capacity; i++){
-        server.drop_is_used[i] = 0;
-    }
-    
-    return 0;
 }
 
 void update_beasts(){
@@ -600,15 +586,14 @@ struct server_t * init_server(){
 
     server.number_of_beast = 0;
     server.capacity_of_beast = MAX_NUMBER_OF_BEASTS;
-
+    for(int i = 0; i < MAX_NUMBER_OF_DROPS; i++)
+        server.drop_is_used[i] = 0;
     return &server;
 }
 void close_server(){
     sem_wait(&server.sem);
     free(server.map);
     server.map = NULL;
-    free(server.drops);
-    server.drops = NULL;
     sem_post(&server.sem);
     sem_destroy(&server.sem);
 }
